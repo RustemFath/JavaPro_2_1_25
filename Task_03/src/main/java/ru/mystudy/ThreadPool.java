@@ -5,17 +5,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ThreadPool {
     private final LinkedList<Runnable> tasks = new LinkedList<>();
-    private final LinkedList<WorkerThread> workerThreads = new LinkedList<>();
+    private final Thread[] workers;
     private final AtomicBoolean canAddTask = new AtomicBoolean(true);
 
     public ThreadPool(int workThreadCount) {
         if (workThreadCount < 1) {
             throw new IllegalArgumentException("Параметр workThreadCount задан некорректно");
         }
+        workers = new Worker[workThreadCount];
         for (int i = 0; i < workThreadCount; i++) {
-            final var worker = new WorkerThread();
-            workerThreads.add(worker);
-            worker.start();
+            workers[i] = new Worker();
+            workers[i].start();
         }
     }
 
@@ -33,10 +33,13 @@ public class ThreadPool {
         synchronized (tasks) {
             tasks.add(task);
         }
-        for (final var worker : workerThreads) {
-            if (worker.isLocked()) {
-                worker.unlock();
-                return;
+        for (final var worker : workers) {
+            synchronized (worker) {
+                if ((worker.getState() == Thread.State.WAITING) ||
+                        (worker.getState() == Thread.State.TIMED_WAITING)) {
+                    worker.notify();
+                    return;
+                }
             }
         }
     }
@@ -50,6 +53,14 @@ public class ThreadPool {
         if (canAddTask.get()) {
             canAddTask.set(false);
         }
+        for (var worker : workers) {
+            synchronized (worker) {
+                if ((worker.getState() == Thread.State.WAITING) ||
+                        (worker.getState() == Thread.State.TIMED_WAITING)) {
+                    worker.notify();
+                }
+            }
+        }
         System.out.println("shutdown");
     }
 
@@ -62,12 +73,15 @@ public class ThreadPool {
             boolean isTerminated;
             while (true) {
                 isTerminated = true;
-                for (final var worker : workerThreads) {
-                    if (worker.isLocked()) {
-                        worker.unlock();
-                        isTerminated = false;
-                    } else if (!worker.isTerminate()) {
-                        isTerminated = false;
+                for (var worker : workers) {
+                    synchronized (worker) {
+                        if ((worker.getState() == Thread.State.WAITING) ||
+                                (worker.getState() == Thread.State.TIMED_WAITING)) {
+                            worker.notify();
+                            isTerminated = false;
+                        } else if (worker.getState() != Thread.State.TERMINATED) {
+                            isTerminated = false;
+                        }
                     }
                 }
                 if (isTerminated) {
@@ -87,7 +101,7 @@ public class ThreadPool {
         }
     }
 
-    private void runWorker(WorkerThread workerThread) {
+    private void runWorker(Thread worker) {
         System.out.println(Thread.currentThread().getName() + " start");
         Runnable task;
         while (canAddTask.get() || hasTasks()) {
@@ -95,7 +109,13 @@ public class ThreadPool {
                 task = tasks.pollFirst();
             }
             if (task == null) {
-                workerThread.lock();
+                try {
+                    synchronized (worker) {
+                        worker.wait();
+                    }
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
             } else {
                 task.run();
             }
@@ -103,49 +123,10 @@ public class ThreadPool {
         System.out.println(Thread.currentThread().getName() + " finish");
     }
 
-    private class WorkerThread implements Runnable {
-        private final Thread thread;
-
-        public WorkerThread() {
-            thread = new Thread(this);
-        }
-
+    private class Worker extends Thread {
         @Override
         public void run() {
             runWorker(this);
-        }
-
-        void start() {
-            thread.start();
-        }
-
-        void lock() {
-            try {
-                synchronized (thread) {
-                    thread.wait();
-                }
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        void unlock() {
-            synchronized (thread) {
-                thread.notify();
-            }
-        }
-
-        boolean isLocked() {
-            synchronized (thread) {
-                return (thread.getState() == Thread.State.WAITING) ||
-                       (thread.getState() == Thread.State.TIMED_WAITING);
-            }
-        }
-
-        boolean isTerminate() {
-            synchronized (thread) {
-                return thread.getState() == Thread.State.TERMINATED;
-            }
         }
     }
 }
