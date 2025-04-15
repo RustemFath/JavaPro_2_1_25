@@ -12,9 +12,30 @@ public class ThreadPool {
         if (workThreadCount < 1) {
             throw new IllegalArgumentException("Параметр workThreadCount задан некорректно");
         }
-        workers = new Worker[workThreadCount];
+        workers = new Thread[workThreadCount];
         for (int i = 0; i < workThreadCount; i++) {
-            workers[i] = new Worker();
+            workers[i] = new Thread(() -> {
+                Thread worker = Thread.currentThread();
+                System.out.println(Thread.currentThread().getName() + " start");
+                Runnable task;
+                while (canAddTask.get() || hasTasks()) {
+                    synchronized (tasks) {
+                        task = tasks.pollFirst();
+                    }
+                    if (task == null) {
+                        try {
+                            synchronized (worker) {
+                                worker.wait();
+                            }
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    } else {
+                        task.run();
+                    }
+                }
+                System.out.println(Thread.currentThread().getName() + " finish");
+            });
             workers[i].start();
         }
     }
@@ -98,35 +119,6 @@ public class ThreadPool {
     private boolean hasTasks() {
         synchronized (tasks) {
             return !tasks.isEmpty();
-        }
-    }
-
-    private void runWorker(Thread worker) {
-        System.out.println(Thread.currentThread().getName() + " start");
-        Runnable task;
-        while (canAddTask.get() || hasTasks()) {
-            synchronized (tasks) {
-                task = tasks.pollFirst();
-            }
-            if (task == null) {
-                try {
-                    synchronized (worker) {
-                        worker.wait();
-                    }
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            } else {
-                task.run();
-            }
-        }
-        System.out.println(Thread.currentThread().getName() + " finish");
-    }
-
-    private class Worker extends Thread {
-        @Override
-        public void run() {
-            runWorker(this);
         }
     }
 }
