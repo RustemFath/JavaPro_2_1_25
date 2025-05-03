@@ -1,4 +1,4 @@
-package ru.mystudy.dto;
+package ru.mystudy.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;

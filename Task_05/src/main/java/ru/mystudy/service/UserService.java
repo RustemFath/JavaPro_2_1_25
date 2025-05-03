@@ -3,22 +3,21 @@ package ru.mystudy.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Service;
-import ru.mystudy.dto.User;
+import ru.mystudy.entity.User;
 import ru.mystudy.repository.UserRepository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class UserService implements CommandLineRunner {
     private final UserRepository userRepository;
 
-    public Optional<User> findById(Long id) {
+    public User findById(Long id) {
         if (id == null) {
-            throw new NullPointerException("Parameter id is null");
+            throw new IllegalArgumentException("Parameter id is null");
         }
-        return userRepository.findById(id);
+        return userRepository.findById(id).orElse(null);
     }
 
     public List<User> findAll() {
@@ -42,7 +41,7 @@ public class UserService implements CommandLineRunner {
 
     private void checkUser(User user) {
         if (user == null) {
-            throw new NullPointerException("Parameter user is null");
+            throw new IllegalArgumentException("Parameter user is null");
         }
     }
 
@@ -64,7 +63,7 @@ public class UserService implements CommandLineRunner {
         System.out.println("create user: " + user);
 
         //get one
-        Optional<User> userOne = this.findById(user.getId());
+        User userOne = this.findById(user.getId());
         System.out.println("find by id user: " + userOne);
 
         //get all
@@ -75,10 +74,10 @@ public class UserService implements CommandLineRunner {
         System.out.println("delete user: " + user1);
 
         //delete
-        userOne.ifPresent(user2 -> {
-            this.deleteUser(user2);
-            System.out.println("delete user: " + user2);
-        });
+        if (userOne != null) {
+            this.deleteUser(userOne);
+            System.out.println("delete user: " + userOne);
+        };
 
         //get all
         users = this.findAll();
