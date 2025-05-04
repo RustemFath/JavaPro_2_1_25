@@ -8,4 +8,6 @@
 
     <include file="/changeSet/insertUsers.sql" relativeToChangelogFile="true" />
 
+    <include file="/changeSet/createProducts.sql" relativeToChangelogFile="true" />
+
 </databaseChangeLog>
