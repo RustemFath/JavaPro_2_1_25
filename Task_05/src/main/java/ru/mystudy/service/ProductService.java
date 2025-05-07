@@ -3,7 +3,10 @@ package ru.mystudy.service;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.mystudy.ProductMapper;
+import ru.mystudy.entity.User;
+import ru.mystudy.repository.UserRepository;
+import ru.mystudy.utils.ProductMapper;
+import ru.mystudy.dto.ProductCreateRequest;
 import ru.mystudy.dto.ProductDto;
 import ru.mystudy.dto.ProductResponse;
 import ru.mystudy.entity.Product;
@@ -16,6 +19,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ProductService {
     private final ProductRepository productRepository;
+    private final UserRepository userRepository;
 
     public ProductDto findByProductId(Long id) {
         if (id == null) {
@@ -29,11 +33,20 @@ public class ProductService {
         if (userId == null) {
             throw new IllegalArgumentException("Parameter userId is null");
         }
+        userRepository.findById(userId).orElseThrow(EntityNotFoundException::new);
         List<Product> products = productRepository.findByUserId(userId);
         return new ProductResponse(
                 products.stream()
                         .map(ProductMapper::toDto)
                         .collect(Collectors.toList()),
                 userId);
+    }
+
+    public ProductDto createProduct(ProductCreateRequest productCreateRequest) {
+        User user = userRepository.findById(productCreateRequest.userId()).orElseThrow(EntityNotFoundException::new);
+        Product newProduct = ProductMapper.toProduct(productCreateRequest);
+        newProduct.setUser(user);
+        Product product = productRepository.save(newProduct);
+        return ProductMapper.toDto(product);
     }
 }

@@ -3,6 +3,7 @@ package ru.mystudy.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import ru.mystudy.dto.ProductCreateRequest;
 import ru.mystudy.dto.ProductDto;
 import ru.mystudy.dto.ProductResponse;
 import ru.mystudy.service.ProductService;
@@ -26,4 +27,9 @@ public class ProductController {
         return productService.findByProductId(id);
     }
 
+    @PostMapping("/create")
+    public ProductDto createProduct(@RequestBody ProductCreateRequest productCreateRequest) {
+        log.info("post, method: createProduct, request - {}", productCreateRequest);
+        return productService.createProduct(productCreateRequest);
+    }
 }
