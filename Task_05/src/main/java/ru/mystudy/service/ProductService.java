@@ -20,13 +20,14 @@ import java.util.stream.Collectors;
 public class ProductService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final ProductMapper productMapper;
 
     public ProductDto findByProductId(Long id) {
         if (id == null) {
             throw new IllegalArgumentException("Parameter id is null");
         }
         Product product = productRepository.findById(id).orElseThrow(EntityNotFoundException::new);
-        return ProductMapper.toDto(product);
+        return productMapper.toDto(product);
     }
 
     public ProductResponse findByUserId(Long userId) {
@@ -37,16 +38,16 @@ public class ProductService {
         List<Product> products = productRepository.findByUserId(userId);
         return new ProductResponse(
                 products.stream()
-                        .map(ProductMapper::toDto)
+                        .map(productMapper::toDto)
                         .collect(Collectors.toList()),
                 userId);
     }
 
     public ProductDto createProduct(ProductCreateRequest productCreateRequest) {
         User user = userRepository.findById(productCreateRequest.userId()).orElseThrow(EntityNotFoundException::new);
-        Product newProduct = ProductMapper.toProduct(productCreateRequest);
+        Product newProduct = productMapper.toProduct(productCreateRequest);
         newProduct.setUser(user);
         Product product = productRepository.save(newProduct);
-        return ProductMapper.toDto(product);
+        return productMapper.toDto(product);
     }
 }
