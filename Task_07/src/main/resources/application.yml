@@ -1,0 +1,17 @@
+server:
+  servlet:
+    context-path: "/api/payments-app"
+  port: 8182
+
+integration:
+  clients:
+    products-client:
+      url: "http://localhost:8181"
+      connect-timeout: 5s
+      read-timeout: 30s
+      get-by-user-id-uri: "/api/products-app/product/v1/by-user-id?id="
+    payments-client:
+      url: "http://localhost:8183"
+      connect-timeout: 10s
+      read-timeout: 30s
+      execute-uri: "/api/payments-app/v1/execute"

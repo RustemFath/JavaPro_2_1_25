@@ -1,11 +1,13 @@
 package ru.mystudy.utils;
 
+import org.springframework.stereotype.Service;
 import ru.mystudy.dto.ProductCreateRequest;
 import ru.mystudy.dto.ProductDto;
 import ru.mystudy.entity.Product;
 
+@Service
 public class ProductMapper {
-    public static ProductDto toDto(Product product) {
+    public ProductDto toDto(Product product) {
         return new ProductDto(
                 product.getId(),
                 product.getAccount(),
@@ -14,7 +16,7 @@ public class ProductMapper {
                 product.getUser().getId());
     }
 
-    public static Product toProduct(ProductCreateRequest productCreateRequest) {
+    public Product toProduct(ProductCreateRequest productCreateRequest) {
         Product product = new Product();
         product.setAccount(productCreateRequest.account());
         product.setBalance(productCreateRequest.balance());

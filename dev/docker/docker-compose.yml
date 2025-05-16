@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  wiremock-setup-core:
+    image: rodolpheche/wiremock
+    container_name: wiremock-setup-core
+    environment: {}
+    ports:
+      - "8183:8080"
+    volumes:
+      - ./wiremock/stubs/__files/:/home/wiremock/__files/
+      - ./wiremock/stubs/mappings/:/home/wiremock/mappings/
+    command:
+      - -verbose
+      - -global-response-templating
