@@ -26,7 +26,8 @@ public class ProductService {
         if (id == null) {
             throw new IllegalArgumentException("Parameter id is null");
         }
-        Product product = productRepository.findById(id).orElseThrow(EntityNotFoundException::new);
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("В БД не найден продукт клиента с id = " +  id));
         return productMapper.toDto(product);
     }
 
@@ -34,7 +35,8 @@ public class ProductService {
         if (userId == null) {
             throw new IllegalArgumentException("Parameter userId is null");
         }
-        userRepository.findById(userId).orElseThrow(EntityNotFoundException::new);
+        userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("В БД не найден клиент с id = " +  userId));
         List<Product> products = productRepository.findByUserId(userId);
         return new ProductResponse(
                 products.stream()
@@ -44,7 +46,9 @@ public class ProductService {
     }
 
     public ProductDto createProduct(ProductCreateRequest productCreateRequest) {
-        User user = userRepository.findById(productCreateRequest.userId()).orElseThrow(EntityNotFoundException::new);
+        User user = userRepository.findById(productCreateRequest.userId())
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "В БД не найден клиент с id = " + productCreateRequest.userId()));
         Product newProduct = productMapper.toProduct(productCreateRequest);
         newProduct.setUser(user);
         Product product = productRepository.save(newProduct);
