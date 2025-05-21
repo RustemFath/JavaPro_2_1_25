@@ -15,18 +15,19 @@ import ru.mystudy.utils.UserMapper;
 @RequestMapping("/user/v1")
 public class UserController {
     private final UserService userService;
+    private final UserMapper userMapper;
 
     @PostMapping("/create")
     public UserDto createUser(@RequestBody UserCreateRequest userCreateRequest) {
         log.info("post, method: createUser, request - {}", userCreateRequest);
-        return UserMapper.toDto(userService.createUser(UserMapper.toUser(userCreateRequest)));
+        return userMapper.toDto(userService.createUser(userMapper.toUser(userCreateRequest)));
     }
 
     @GetMapping("/users")
     public UserResponse getAllUsers() {
         log.info("get, method: getAllUsers");
         return new UserResponse(userService.findAll().stream()
-                .map(UserMapper::toDto)
+                .map(userMapper::toDto)
                 .toList());
     }
 }
